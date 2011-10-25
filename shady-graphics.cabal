@@ -1,5 +1,5 @@
 Name:                shady-graphics
-Version:             0.5.0
+Version:             0.5.1
 Cabal-Version:       >= 1.2
 Synopsis:            Functional GPU programming - DSEL & compiler
 Category:            Graphics
@@ -24,8 +24,8 @@ Library
 
   Build-Depends:       base >=4 && < 5, containers, mtl, wl-pprint
                      , applicative-numbers>=0.0.4, vector-space>=0.5.6
-                     , TypeCompose >= 0.7
-                     , MemoTrie, ty, data-treify, Boolean
+                     , TypeCompose >= 0.7, MemoTrie, ty, data-treify
+                     , Boolean, NumInstances, type-nat
                      , shady-gen
   Exposed-Modules:
 

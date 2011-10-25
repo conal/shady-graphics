@@ -18,7 +18,7 @@ module Shady.CompileImage (ImageB, imageBProg,imSurfB, eyePos) where
 
 import Data.Derivative (powVal)
 
-import qualified Shady.Vec as V
+import qualified TypeNat.Vec as V
 import Shady.Language.Type (R1,R2)
 import Shady.Language.Exp ((:=>),pureE)
 import Shady.Color -- (white,HasColor(..))
