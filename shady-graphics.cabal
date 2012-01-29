@@ -1,23 +1,25 @@
 Name:                shady-graphics
-Version:             0.5.1
-Cabal-Version:       >= 1.2
+Version:             0.6.0
+Cabal-Version:       >= 1.6
 Synopsis:            Functional GPU programming - graphics
 Category:            Graphics
 Description:
-  Compile functional specifications for GPU execution.
-  See also shady-render, shady-tv, and shady-examples
+  Graphics types for Shady, for GPU execution
+  See also shady-gen, shady-render, shady-tv, and shady-examples
   .
-  Copyright 2009-2011 by Conal Elliott; GNU AGPLv3 license (see COPYING).
+  Copyright 2009-2012 by Conal Elliott; GNU AGPLv3 license (see COPYING).
   This license is a place-holder.  Let me know if you'd like other terms.
 Author:              Conal Elliott
 Maintainer:          conal@conal.net
-Homepage:            http://haskell.org/haskellwiki/shady
-Package-Url:         http://conal.net/repos/shady-graphics
-Copyright:           (c) by Conal Elliott 2009-2011
+Homepage:            http://github.com/conal/shady-graphics/
+Copyright:           (c) by Conal Elliott 2009-2012
 License:             OtherLicense
 License-File:        COPYING
 Stability:           experimental
 build-type:          Simple
+Source-Repository head
+    type:         git
+    location:     git://github.com/conal/shady-graphics.git
 
 Library
   hs-Source-Dirs:      src
@@ -28,7 +30,6 @@ Library
                      , Boolean, NumInstances, type-unary
                      , shady-gen
   Exposed-Modules:
-
                         Shady.ITransform
                         Shady.Color
                         Shady.Image
