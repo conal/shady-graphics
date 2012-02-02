@@ -1,6 +1,16 @@
 {-# LANGUAGE RankNTypes, GADTs, TypeFamilies, ScopedTypeVariables, FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Shady.CompileEffect where
+module Shady.CompileEffect(
+  -- data types
+  ShadyEffect(..), ShadyGeometry(..), WebGLEffect {-opaque-}, UIElem {-opaque-}, UI {-opaque-}, 
+  -- smart constructors for UIElem
+  uiTime, uiSliderF, uiSliderWithStepF, uiSliderI, {- monad instance -}
+  -- smart constructors for ShadyEffect and ShadyGeometry record types
+  shadyEffect, shadyGeometry,
+  -- functions that operate on opaque data type WebGLEffect
+  compileEffect,                       -- constructs   WebGLEffect
+  fragmentShader, vertexShader, jsonUI -- deconstructs WebGLEffect
+) where
 
 -- System libraries
 import Data.Monoid
@@ -138,17 +148,27 @@ toShader uniforms shader = printf "%s\n%s\n%s" shaderHeaders uniformDecs shader
       ]
 
 
+--
+-- | A selector function for extracting fragment shader from WebGLEffect
+--
 fragmentShader  :: WebGLEffect -> String
 fragmentShader (WebGLEffect (GLSL _ fs _ _) uniforms _) = toShader uniforms fs
 
+--
+-- | A selector function for extracting vertex shader from WebGLEffect
+--
 vertexShader :: WebGLEffect -> String
 vertexShader (WebGLEffect (GLSL vs _ _ _) uniforms _) = toShader uniforms vs
 
+--
+-- | Converts a WebGLEffect into a JSON array containing descriptions of
+--   of all the UI elements of the effect.
+--
 jsonUI :: WebGLEffect -> String
 jsonUI (WebGLEffect _ _ jsons) = prettyJA $ JsonArray jsons
 
 --
--- Compiles a ShadyEffect to a GLSL program.
+-- | Compiles a ShadyEffect to a GLSL program.
 --
 -- An OpenGL (or WebGL) program that links to this GLSL program
 -- should set up a 'uniform' value denoting the time value of the animation
@@ -169,31 +189,69 @@ compileEffect prefix e = WebGLEffect glsl uniforms jsons
     eyePosE :: EyePosE
     eyePosE = pureE (V.vec3 ex ey ez) where (ex,ey,ez) = shadyEyePos e
 
+--
 -- Smart constructors
+--
 uiTime :: UI (E (One Float))
 uiTime    = UIElem UITime
 
-uiSliderF :: String -- ^title
-          -> Float  -- from
-          -> Float
-          -> Float  -- to
-          -> UI (E (One Float))
-uiSliderF = (((UIElem.).).).UISliderF
+--
+-- | Creates a slider that produces Float values.
+--
+-- Conditions:
+--   minVal <= defaultVal <= maxVal
+--
+-- If these conditions do not hold then "sensible" values are substituted.
+--
+uiSliderF :: String -> Float -> Float -> Float -> UI (E (One Float))
+uiSliderF title minVal defaultVal maxVal = UIElem (UISliderF title minVal' defaultVal' maxVal')
+  where (minVal', defaultVal', maxVal', _) = sensible (minVal, defaultVal, maxVal, 0)
 
-uiSliderWithStepF :: String
-                  -> Float
-                  -> Float
-                  -> Float
-                  -> Float
-                  -> UI (E (One Float))
-uiSliderWithStepF = ((((UIElem.).).).).UISliderWithStepF
+--
+-- | Creates a slider that produces Float values with a step value.
+--
+-- Condtions:
+--   minVal <= defaultVal <= maxVal
+--   step <= maxVal - minVal
+--
+-- If these conditions do not hold then "sensible" values are substituted.
+--
+uiSliderWithStepF :: String -> Float -> Float -> Float -> Float -> UI (E (One Float))
+uiSliderWithStepF title minVal defaultVal maxVal step =
+  UIElem (UISliderWithStepF title minVal' defaultVal' maxVal' step')
+  where
+    (minVal', defaultVal', maxVal', step') = sensible (minVal, defaultVal, maxVal, step)
 
-uiSliderI :: String -- ^title
-          -> Int  -- from
-          -> Int
-          -> Int  -- to
-          -> UI (E (One Int))
-uiSliderI = (((UIElem.).).).UISliderI
+--
+-- | Creates a slider that produces Int values.
+--
+-- Conditions:
+--   minVal <= defaultVal <= maxVal
+--
+-- If these conditions do not hold then "sensible" values are substituted.
+--
+uiSliderI :: String -> Int -> Int -> Int -> UI (E (One Int))
+uiSliderI title minVal defaultVal maxVal =
+  UIElem (UISliderI title minVal' defaultVal' maxVal')
+  where
+    (minVal', defaultVal', maxVal',_) = sensible (minVal, defaultVal, maxVal, 0)
+
+--
+-- A helper function to clamp "bad" slider values to sensible ones.
+--
+-- Examples:
+--  sensible (0, 2, -3,   1)  == (0, 0, 0, 0)
+--  sensible (0, 5,  3,   1)  == (0, 3, 3, 1)
+--  sensible (0, -5, 3,   1)  == (0, 0, 3, 1)
+--  sensible (0, 2,  5,  10)  == (0, 2, 5, 5)
+--  sensible (0, 2,  5, -10)  == (0, 2, 5, 0)
+--
+sensible :: (Num a, Ord a) => (a,a,a,a) -> (a,a,a,a)
+sensible (minVal, defaultVal, maxVal, step) = (minVal, defaultVal', maxVal', step')
+  where
+    maxVal'     = minVal `max` maxVal
+    defaultVal' = (minVal `max` defaultVal) `min` maxVal'
+    step'       = ((maxVal' - minVal) `min` step) `max` 0
 
 ---------------------------------
 
@@ -212,13 +270,13 @@ uiElemToJson uniformName e = addNameEntry $ case e of
       , ("value",     JVNumber defaultVal)
       , ("max",       JVNumber upper) ]
     UISliderWithStepF title lower defaultVal step upper ->
-        [ ("sort",      JVString "float_slider_with_step")
-        , ("ui-type",   JVString "float")
-        , ("title",     JVString title)
-        , ("min",       JVNumber lower)
-        , ("value",     JVNumber defaultVal)
-        , ("step",      JVNumber step)
-        , ("max",       JVNumber upper) ]
+      [ ("sort",      JVString "float_slider_with_step")
+      , ("ui-type",   JVString "float")
+      , ("title",     JVString title)
+      , ("min",       JVNumber lower)
+      , ("value",     JVNumber defaultVal)
+      , ("step",      JVNumber step)
+      , ("max",       JVNumber upper) ]
     UISliderI title lower defaultVal upper ->
       [ ("sort",      JVString "int_slider")
       , ("ui-type",   JVString "int")
@@ -231,12 +289,3 @@ uiElemToJson uniformName e = addNameEntry $ case e of
       , ("ui-type",   JVString "time") ]
   where
     addNameEntry = JVObject .JsonObject . (("name", JVString uniformName):)
-
-----------------------------------
-
-testEffect = shadyEffect $ do
-  t <- uiTime
-  f <- uiSliderF "aslider" 1 4 5
-  x <- do y <- uiSliderI "slider" 1 9 10
-          return (y + 1)
-  return $ shadyGeometry
