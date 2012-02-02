@@ -7,26 +7,25 @@
 -- Module      :  Shady.CompileImage
 -- Copyright   :  (c) Conal Elliott 2009
 -- License     :  AGPLv3
--- 
+--
 -- Maintainer  :  conal@conal.net
 -- Stability   :  experimental
--- 
+--
 -- Compile a parameterized image
 ----------------------------------------------------------------------
 
-module Shady.CompileImage (ImageB{-, imageBProg-},imSurfB, eyePos) where
+module Shady.CompileImage (ImageB,imSurfB, eyePos, eyePosE) where
 
 import Data.Derivative (powVal)
 
 import qualified TypeUnary.Vec as V
-import Shady.Language.Type (R1,R2)
+import Shady.Language.Type (R1)
 import Shady.Language.Exp ((:=>),pureE)
 import Shady.Color -- (white,HasColor(..))
 import Shady.Image (Image)
-import Shady.CompileE (GLSL)
 import Shady.ParamSurf (xyPlane)
 import Shady.Lighting (intrinsic,view1)
-import Shady.CompileSurface (EyePosE,SurfB{-,surfBProg-}, Zoom)
+import Shady.CompileSurface (EyePosE,SurfB)
 import Shady.Misc (EyePos)
 
 
@@ -43,7 +42,3 @@ eyePosE = pureE (V.vec3 ex ey ez) where (ex,ey,ez) = eyePos
 
 imSurfB :: HasColor c => ImageB c -> SurfB
 imSurfB imb t = (intrinsic, view1, xyPlane , toColor . imb (powVal t))
-
--- | GLSL program for an 'ImageB'.
---imageBProg :: HasColor c => ImageB c -> GLSL (R1,Zoom) R2
---imageBProg = surfBProg eyePosE . imSurfB
