@@ -32,9 +32,9 @@ import Shady.CompileEs      (shaderProgram)
 import Text.PrettyPrint.Leijen.DocExpr (HasExpr(..))
 import Shady.Language.Exp  (R1, R2, R3, R3E, pureE, BoolE, patE, patT, ExpT(..), E(..), 
                             FromE(..), HasType, pat)
-import Shady.Vec as V
 import Shady.Misc           (EyePos)
 import Data.Derivative      (powVal, pureD)
+import TypeUnary.Vec        (vec3, Vec1)
 import Data.NameM
 
 data ShadyEffect c = ShadyEffect {
@@ -65,19 +65,19 @@ data UIElem a where
             -> Float  -- ^ lower bound
             -> Float  -- ^ default
             -> Float  -- ^ upper bound
-            -> UIElem (E (One Float))
+            -> UIElem (E (Vec1 Float))
   UISliderWithStepF :: String -- ^ title
                     -> Float  -- ^ lower bound
                     -> Float  -- ^ default
                     -> Float  -- ^ step (step <= upperbound - lowerbound)
                     -> Float  -- ^ upper bound
-                    -> UIElem (E (One Float))
+                    -> UIElem (E (Vec1 Float))
   UISliderI :: String -- ^ title
             -> Int    -- ^ lower bound
             -> Int    -- ^ default
             -> Int    -- ^ upper bound
-            -> UIElem (E (One Int))
-  UITime    :: UIElem (E (One Float))
+            -> UIElem (E (Vec1 Int))
+  UITime    :: UIElem (E (Vec1 Float))
 
 data UI a where
   UIElem  :: (FromE a, HasType (ExpT a)) => UIElem a -> UI a
@@ -195,12 +195,12 @@ compileEffect prefix e = WebGLEffect glsl uniforms jsons
          surface = shadySurface geom
          image   = toColor . shadyImage geom
     eyePosE :: EyePosE
-    eyePosE = pureE (V.vec3 ex ey ez) where (ex,ey,ez) = shadyEyePos e
+    eyePosE = pureE (vec3 ex ey ez) where (ex,ey,ez) = shadyEyePos e
 
 --
 -- Smart constructors
 --
-uiTime :: UI (E (One Float))
+uiTime :: UI (E (Vec1 Float))
 uiTime    = UIElem UITime
 
 --
@@ -211,7 +211,7 @@ uiTime    = UIElem UITime
 --
 -- If these conditions do not hold then "sensible" values are substituted.
 --
-uiSliderF :: String -> Float -> Float -> Float -> UI (E (One Float))
+uiSliderF :: String -> Float -> Float -> Float -> UI (E (Vec1 Float))
 uiSliderF title minVal defaultVal maxVal = UIElem (UISliderF title minVal' defaultVal' maxVal')
   where (minVal', defaultVal', maxVal', _) = sensible (minVal, defaultVal, maxVal, 0)
 
@@ -224,7 +224,7 @@ uiSliderF title minVal defaultVal maxVal = UIElem (UISliderF title minVal' defau
 --
 -- If these conditions do not hold then "sensible" values are substituted.
 --
-uiSliderWithStepF :: String -> Float -> Float -> Float -> Float -> UI (E (One Float))
+uiSliderWithStepF :: String -> Float -> Float -> Float -> Float -> UI (E (Vec1 Float))
 uiSliderWithStepF title minVal defaultVal maxVal step  =
   UIElem (UISliderWithStepF title minVal' defaultVal' maxVal' step')
   where
@@ -238,7 +238,7 @@ uiSliderWithStepF title minVal defaultVal maxVal step  =
 --
 -- If these conditions do not hold then "sensible" values are substituted.
 --
-uiSliderI :: String -> Int -> Int -> Int -> UI (E (One Int))
+uiSliderI :: String -> Int -> Int -> Int -> UI (E (Vec1 Int))
 uiSliderI title minVal defaultVal maxVal =
   UIElem (UISliderI title minVal' defaultVal' maxVal')
   where
