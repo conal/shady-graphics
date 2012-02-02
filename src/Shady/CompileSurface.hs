@@ -17,10 +17,10 @@
 module Shady.CompileSurface
   ( EyePosE, FullSurf
   , SurfB
-  , surfBProg
+--  , surfBProg
   , wrapSurf
   -- * unused but exported to suppress "unused" warning
-  , wrapSurfExact, wrapSurfIN, wrapSurfIC
+  , wrapSurfExact--, wrapSurfIN, wrapSurfIC
   -- types
   , Zoom
   ) where
@@ -40,8 +40,9 @@ import Shady.Color (Color)
 import Shady.CompileEs
   ((:->)(ShaderVF),ShaderVF,shaderProgram,GLSL)  -- ,compile
 
-import Shady.ParamSurf (T, SurfD, surfVN)
+import Shady.ParamSurf (T, SurfD, surfVN, rotateByMatrix, onX, onY, onZ, translate)
 import Shady.Lighting -- (View,Shader)
+import Shady.Complex
 
 -- Arbitrary for now.  Later do progressive (infinite sequence of grids)
 -- and adpative.
@@ -66,15 +67,19 @@ splitF = result fst &&& result snd
 type ShSurf = ShaderVF Point
 
 --
--- The zoom value must be provided by the display environment via a GLSL uniform.
+-- The rotation vectors, pan and zoom values must be provided by the display
+-- environment via a GLSL uniform.
 -- Thus there is a notion of custom uniform values and required uniform values.
 --
 -- The U type extends a type representing custom uniforms to one representing
 -- the required uniforms as well.
 --
-type U u' = (u', E Zoom)
+type CustomUniforms = (E R3, (E R3, (E R3, (E R3, E Zoom))))
 
-type Zoom = R1
+type U u' = (u', CustomUniforms)
+
+type Angle = R1
+type Zoom  = R1
 
 -- | Surface wrapper, e.g., 'wrapSurfExact', 'wrapSurfIN', 'wrapSurfIC'
 type SurfWrapper u' = (u' -> FullSurf) -> (U u' -> ShSurf)
@@ -86,6 +91,83 @@ wrapSurf = wrapSurfExact  -- exact lighting (beautiful)
 
 -- Change wrapSurf to wrapSurfIN or wrapSurfIC to compare.
 
+rotatePanZoom :: CustomUniforms -> SurfD -> SurfD
+rotatePanZoom (aRow, (bRow, (cRow, (pan, z)))) surfd =
+  \p -> onX (translate panX) .
+        onY (translate panY) .
+        onZ (translate panZ) .
+        rotateByMatrix (conv aRow, conv bRow, conv cRow) .
+        (/(pureD z, pureD z, pureD z)) $ surfd p
+  where
+    (panX, panY, panZ) = conv pan
+    conv :: E R3 -> (T,T,T)
+    conv v = (pureD (getX v), pureD (getY v), pureD (getZ v))
+
+-- | Wrap up a parameterized surface for compiling.  Computes normals and
+-- lighting per pixel -- sometimes called "exact shading".
+wrapSurfExact :: forall u'. EyePosE -> SurfWrapper u'
+wrapSurfExact eyePos f = liftA2 ShaderVF vert frag
+ where
+   vert :: U u' -> Point -> (E R4, (Point, E R3))
+   vert (u',ru) p' = (vTrans (pos <+> 1), (p',pos))
+    where
+      surfd = rotatePanZoom ru surfd'
+      (_,_,surfd',_) = f u'
+      (posF,_) = splitF (surfVN surfd)
+      pos = posF (toE p')
+
+   frag :: U u' -> (Point,E R3) -> (E R4,())
+   frag (u',ru) (p',pos) = (col, ())
+    where
+      surfd = rotatePanZoom ru surfd'
+      (l,view,surfd',img) = f u'
+      (_,norF) = splitF (surfVN surfd)
+      col = colorToR4 (l (view eyePos) (SurfInfo pos (nTrans nor) (img p')))
+      nor = norF (toE p')
+
+-- -- | Wrap up a parameterized surface for compiling.
+-- -- This variant interpolates normals, as in Phong shading.
+-- wrapSurfIN :: forall u'. EyePosE -> SurfWrapper u'
+-- wrapSurfIN eyePos f = liftA2 ShaderVF vert frag
+--  where
+--    vert :: U u' -> Point -> (E R4, (Point, (E R3, E R3)))
+--    vert (u',z') p' = (vTrans (pos <+> z'), (p',(pos,nTrans nor)))
+--     where
+--       (_,_,surfd,_) = f u'
+--       (posF,norF) = splitF (surfVN surfd)
+--       pos = posF p
+--       nor = norF p
+--       p   = toE  p'
+--
+--    frag :: U u' -> (Point,(E R3, E R3)) -> (E R4,())
+--    frag (u',_) (p',(pos,nor)) = (col, ())
+--     where
+--       (sh,view,_,img) = f u'
+--       col = colorToR4 (sh (view eyePos) (SurfInfo pos nor (img p')))
+--
+-- -- TODO: wrapSurfIC, interpolating colors, as in Gouraud shading.
+--
+-- -- | Wrap up a parameterized surface for compiling.
+-- -- This variant interpolates normals, as in Phong shading.
+-- wrapSurfIC :: forall u'. EyePosE -> SurfWrapper u'
+-- wrapSurfIC eyePos f = liftA2 ShaderVF vert frag
+--  where
+--    vert :: U u' -> Point -> (E R4, E R4)
+--    vert (u',z') p' = (vTrans (pos <+> z'), col)
+--     where
+--       (sh,view,surfd,img) = f u'
+--       (posF,norF) = splitF (surfVN surfd)
+--       pos = posF p
+--       nor = norF p
+--       p   = toE  p'
+--       col = colorToR4 (sh (view eyePos) (SurfInfo pos (nTrans nor) (img p')))
+--
+--    frag :: U u' -> E R4 -> (E R4,())
+--    frag _ col = (col, ())
+
+
+-- | 3D animation
+type SurfB = T -> FullSurf
 
 --
 -- sseefried: In this extended comment I'm going to explain, in a little
@@ -122,7 +204,7 @@ wrapSurf = wrapSurfExact  -- exact lighting (beautiful)
 -- Call this 'pos'.
 --
 -- Finally 'vert' yields '(vTrans (pos <+> 1), (p\', pos))'. The second component of the
--- pair are the "varying" values (a GLSL term) that are passed from the vertex shader to
+-- pair are the GLSL "varying" values that are passed from the vertex shader to
 -- the fragment shader by GLSL's run-time.
 --
 -- (The Shady data type ShaderVF has been cleverly defined so that the output "varying" values
@@ -139,70 +221,3 @@ wrapSurf = wrapSurfExact  -- exact lighting (beautiful)
 -- ~~~~~~~~~~~~~~~
 --
 
--- | Wrap up a parameterized surface for compiling.  Computes normals and
--- lighting per pixel -- sometimes called "exact shading".
-wrapSurfExact :: forall u'. EyePosE -> SurfWrapper u'
-wrapSurfExact eyePos f = liftA2 ShaderVF vert frag
- where
-   vert :: U u' -> Point -> (E R4, (Point, E R3))
-   vert (u',z') p' = (vTrans (pos <+> z'), (p',pos))
-    where
-      (_,_,surfd,_) = f u'
-      (posF,_) = splitF (surfVN surfd)
-      pos = posF (toE p')
-
-   frag :: U u' -> (Point,E R3) -> (E R4,())
-   frag (u',_) (p',pos) = (col, ())
-    where
-      (l,view,surfd,img) = f u'
-      (_,norF) = splitF (surfVN surfd)
-      col = colorToR4 (l (view eyePos) (SurfInfo pos (nTrans nor) (img p')))
-      nor = norF (toE p')
-
--- | Wrap up a parameterized surface for compiling.
--- This variant interpolates normals, as in Phong shading.
-wrapSurfIN :: forall u'. EyePosE -> SurfWrapper u'
-wrapSurfIN eyePos f = liftA2 ShaderVF vert frag
- where
-   vert :: U u' -> Point -> (E R4, (Point, (E R3, E R3)))
-   vert (u',z') p' = (vTrans (pos <+> z'), (p',(pos,nTrans nor)))
-    where
-      (_,_,surfd,_) = f u'
-      (posF,norF) = splitF (surfVN surfd)
-      pos = posF p
-      nor = norF p
-      p   = toE  p'
-
-   frag :: U u' -> (Point,(E R3, E R3)) -> (E R4,())
-   frag (u',_) (p',(pos,nor)) = (col, ())
-    where
-      (sh,view,_,img) = f u'
-      col = colorToR4 (sh (view eyePos) (SurfInfo pos nor (img p')))
-
--- TODO: wrapSurfIC, interpolating colors, as in Gouraud shading.
-
--- | Wrap up a parameterized surface for compiling.
--- This variant interpolates normals, as in Phong shading.
-wrapSurfIC :: forall u'. EyePosE -> SurfWrapper u'
-wrapSurfIC eyePos f = liftA2 ShaderVF vert frag
- where
-   vert :: U u' -> Point -> (E R4, E R4)
-   vert (u',z') p' = (vTrans (pos <+> z'), col)
-    where
-      (sh,view,surfd,img) = f u'
-      (posF,norF) = splitF (surfVN surfd)
-      pos = posF p
-      nor = norF p
-      p   = toE  p'
-      col = colorToR4 (sh (view eyePos) (SurfInfo pos (nTrans nor) (img p')))
-
-   frag :: U u' -> E R4 -> (E R4,())
-   frag _ col = (col, ())
-
-
--- | 3D animation
-type SurfB = T -> FullSurf
-
--- | Surface shader program
-surfBProg :: EyePosE -> SurfB -> GLSL (R1,Zoom) R2
-surfBProg eyePos s = shaderProgram (wrapSurf eyePos (s . pureD))

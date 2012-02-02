@@ -30,7 +30,7 @@ import Shady.Lighting       (View, view1, basicStd)
 import Shady.CompileE       (GLSL(..))
 import Shady.CompileEs      (shaderProgram)
 import Text.PrettyPrint.Leijen.DocExpr (HasExpr(..))
-import Shady.Language.Exp  (R1, R2, R3E, pureE, BoolE, patE, patT, ExpT(..), E(..), 
+import Shady.Language.Exp  (R1, R2, R3, R3E, pureE, BoolE, patE, patT, ExpT(..), E(..), 
                             FromE(..), HasType, pat)
 import Shady.Vec as V
 import Shady.Misc           (EyePos)
@@ -127,7 +127,8 @@ instance Monad UI where
 
 type VertexPosAttribute = R2
 
-data WebGLEffect = WebGLEffect (GLSL ((), Zoom) VertexPosAttribute) [VU] [JsonValue]
+data WebGLEffect = WebGLEffect (GLSL ((), (R3, (R3, (R3, (R3, Zoom)))))
+                               VertexPosAttribute) [VU] [JsonValue]
 
 toShader :: [VU] -> String -> String
 toShader uniforms shader = printf "%s\n%s\n%s" shaderHeaders uniformDecs shader
@@ -143,11 +144,15 @@ toShader uniforms shader = printf "%s\n%s\n%s" shaderHeaders uniformDecs shader
       , "uniform mat4 ModelViewProjectionMatrix;"
       , "uniform mat3 NormalMatrix;"
       , ""
-      , "#define _attribute mesh_coords"
-      , "#define _uniform_S zoom"
+      , "#define _attribute meshCoords"
+      , "#define _uniform_SSSSS zoom"
+      , "#define _uniform_SSSSF pan"
+      , "/* aRow, bRow, and cRow are three rows of the rotation matrix */"
+      , "#define _uniform_SSSF  cRow"
+      , "#define _uniform_SSF   bRow"
+      , "#define _uniform_SF    aRow"
       , "/* varying_F is just copy of mesh_coords"
-      , "   varying_S is vertex position of mesh coordinate after transformation"
-      , "   uniform_S is the zoom factor (the 'w' in (x,y,z,w) co-ordinates) */"
+      , "   varying_S is vertex position of mesh coordinate after transformation */"
       ]
 
 

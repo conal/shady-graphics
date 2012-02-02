@@ -14,7 +14,7 @@
 -- Compile a parameterized image
 ----------------------------------------------------------------------
 
-module Shady.CompileImage (ImageB, imageBProg,imSurfB, eyePos) where
+module Shady.CompileImage (ImageB{-, imageBProg-},imSurfB, eyePos) where
 
 import Data.Derivative (powVal)
 
@@ -26,7 +26,7 @@ import Shady.Image (Image)
 import Shady.CompileE (GLSL)
 import Shady.ParamSurf (xyPlane)
 import Shady.Lighting (intrinsic,view1)
-import Shady.CompileSurface (EyePosE,SurfB,surfBProg, Zoom)
+import Shady.CompileSurface (EyePosE,SurfB{-,surfBProg-}, Zoom)
 import Shady.Misc (EyePos)
 
 
@@ -45,5 +45,5 @@ imSurfB :: HasColor c => ImageB c -> SurfB
 imSurfB imb t = (intrinsic, view1, xyPlane , toColor . imb (powVal t))
 
 -- | GLSL program for an 'ImageB'.
-imageBProg :: HasColor c => ImageB c -> GLSL (R1,Zoom) R2
-imageBProg = surfBProg eyePosE . imSurfB
+--imageBProg :: HasColor c => ImageB c -> GLSL (R1,Zoom) R2
+--imageBProg = surfBProg eyePosE . imSurfB
