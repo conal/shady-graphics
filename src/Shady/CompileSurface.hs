@@ -21,6 +21,8 @@ module Shady.CompileSurface
   , wrapSurf
   -- * unused but exported to suppress "unused" warning
   , wrapSurfExact, wrapSurfIN, wrapSurfIC
+  -- types
+  , Zoom
   ) where
 
 import Control.Applicative (liftA2)
@@ -63,8 +65,19 @@ splitF = result fst &&& result snd
 -- of eye position.
 type ShSurf = ShaderVF Point
 
+--
+-- The zoom value must be provided by the display environment via a GLSL uniform.
+-- Thus there is a notion of custom uniform values and required uniform values.
+--
+-- The U type extends a type representing custom uniforms to one representing
+-- the required uniforms as well.
+--
+type U u' = (u', E Zoom)
+
+type Zoom = R1
+
 -- | Surface wrapper, e.g., 'wrapSurfExact', 'wrapSurfIN', 'wrapSurfIC'
-type SurfWrapper u' = (u' -> FullSurf) -> (u' -> ShSurf)
+type SurfWrapper u' = (u' -> FullSurf) -> (U u' -> ShSurf)
 
 wrapSurf :: forall u'. EyePosE -> SurfWrapper u'
 wrapSurf = wrapSurfExact  -- exact lighting (beautiful)
@@ -131,15 +144,15 @@ wrapSurf = wrapSurfExact  -- exact lighting (beautiful)
 wrapSurfExact :: forall u'. EyePosE -> SurfWrapper u'
 wrapSurfExact eyePos f = liftA2 ShaderVF vert frag
  where
-   vert :: u' -> Point -> (E R4, (Point, E R3))
-   vert u' p' = (vTrans (pos <+> 1), (p',pos))
+   vert :: U u' -> Point -> (E R4, (Point, E R3))
+   vert (u',z') p' = (vTrans (pos <+> z'), (p',pos))
     where
       (_,_,surfd,_) = f u'
       (posF,_) = splitF (surfVN surfd)
       pos = posF (toE p')
 
-   frag :: u' -> (Point,E R3) -> (E R4,())
-   frag u' (p',pos) = (col, ())
+   frag :: U u' -> (Point,E R3) -> (E R4,())
+   frag (u',_) (p',pos) = (col, ())
     where
       (l,view,surfd,img) = f u'
       (_,norF) = splitF (surfVN surfd)
@@ -151,8 +164,8 @@ wrapSurfExact eyePos f = liftA2 ShaderVF vert frag
 wrapSurfIN :: forall u'. EyePosE -> SurfWrapper u'
 wrapSurfIN eyePos f = liftA2 ShaderVF vert frag
  where
-   vert :: u' -> Point -> (E R4, (Point, (E R3, E R3)))
-   vert u' p' = (vTrans (pos <+> 1), (p',(pos,nTrans nor)))
+   vert :: U u' -> Point -> (E R4, (Point, (E R3, E R3)))
+   vert (u',z') p' = (vTrans (pos <+> z'), (p',(pos,nTrans nor)))
     where
       (_,_,surfd,_) = f u'
       (posF,norF) = splitF (surfVN surfd)
@@ -160,8 +173,8 @@ wrapSurfIN eyePos f = liftA2 ShaderVF vert frag
       nor = norF p
       p   = toE  p'
 
-   frag :: u' -> (Point,(E R3, E R3)) -> (E R4,())
-   frag u' (p',(pos,nor)) = (col, ())
+   frag :: U u' -> (Point,(E R3, E R3)) -> (E R4,())
+   frag (u',_) (p',(pos,nor)) = (col, ())
     where
       (sh,view,_,img) = f u'
       col = colorToR4 (sh (view eyePos) (SurfInfo pos nor (img p')))
@@ -173,8 +186,8 @@ wrapSurfIN eyePos f = liftA2 ShaderVF vert frag
 wrapSurfIC :: forall u'. EyePosE -> SurfWrapper u'
 wrapSurfIC eyePos f = liftA2 ShaderVF vert frag
  where
-   vert :: u' -> Point -> (E R4, E R4)
-   vert u' p' = (vTrans (pos <+> 1), col)
+   vert :: U u' -> Point -> (E R4, E R4)
+   vert (u',z') p' = (vTrans (pos <+> z'), col)
     where
       (sh,view,surfd,img) = f u'
       (posF,norF) = splitF (surfVN surfd)
@@ -183,7 +196,7 @@ wrapSurfIC eyePos f = liftA2 ShaderVF vert frag
       p   = toE  p'
       col = colorToR4 (sh (view eyePos) (SurfInfo pos (nTrans nor) (img p')))
 
-   frag :: u' -> E R4 -> (E R4,())
+   frag :: U u' -> E R4 -> (E R4,())
    frag _ col = (col, ())
 
 
@@ -191,5 +204,5 @@ wrapSurfIC eyePos f = liftA2 ShaderVF vert frag
 type SurfB = T -> FullSurf
 
 -- | Surface shader program
-surfBProg :: EyePosE -> SurfB -> GLSL R1 R2
+surfBProg :: EyePosE -> SurfB -> GLSL (R1,Zoom) R2
 surfBProg eyePos s = shaderProgram (wrapSurf eyePos (s . pureD))

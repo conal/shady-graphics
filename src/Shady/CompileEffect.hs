@@ -24,7 +24,7 @@ import Shady.CompileEffect.Json
 import Shady.Image          (Image)
 import Shady.Color          (Color, HasColor, black, clear, toColor)
 import Shady.CompileImage   (eyePos)
-import Shady.CompileSurface (wrapSurf, EyePosE)
+import Shady.CompileSurface (wrapSurf, EyePosE, Zoom)
 import Shady.ParamSurf      (SurfD, T, xyPlane)
 import Shady.Lighting       (View, view1, basicStd)
 import Shady.CompileE       (GLSL(..))
@@ -115,6 +115,7 @@ runUINameM uniquePrefix ui = case ui of
     (a', varsAndJsons') <- go (f a)
     return (a', varsAndJsons ++ varsAndJsons')
   where
+    go :: UI a -> NameM (a, [(VU, JsonValue)])
     go = runUINameM uniquePrefix
 
 runUI :: String -> UI a -> (a, [(VU, JsonValue)])
@@ -126,7 +127,7 @@ instance Monad UI where
 
 type VertexPosAttribute = R2
 
-data WebGLEffect = WebGLEffect (GLSL () VertexPosAttribute) [VU] [JsonValue]
+data WebGLEffect = WebGLEffect (GLSL ((), Zoom) VertexPosAttribute) [VU] [JsonValue]
 
 toShader :: [VU] -> String -> String
 toShader uniforms shader = printf "%s\n%s\n%s" shaderHeaders uniformDecs shader
@@ -143,8 +144,10 @@ toShader uniforms shader = printf "%s\n%s\n%s" shaderHeaders uniformDecs shader
       , "uniform mat3 NormalMatrix;"
       , ""
       , "#define _attribute mesh_coords"
+      , "#define _uniform_S zoom"
       , "/* varying_F is just copy of mesh_coords"
-      , "   varying_S is vertex position of mesh coordinate after transformation */"
+      , "   varying_S is vertex position of mesh coordinate after transformation"
+      , "   uniform_S is the zoom factor (the 'w' in (x,y,z,w) co-ordinates) */"
       ]
 
 
@@ -217,7 +220,7 @@ uiSliderF title minVal defaultVal maxVal = UIElem (UISliderF title minVal' defau
 -- If these conditions do not hold then "sensible" values are substituted.
 --
 uiSliderWithStepF :: String -> Float -> Float -> Float -> Float -> UI (E (One Float))
-uiSliderWithStepF title minVal defaultVal maxVal step =
+uiSliderWithStepF title minVal defaultVal maxVal step  =
   UIElem (UISliderWithStepF title minVal' defaultVal' maxVal' step')
   where
     (minVal', defaultVal', maxVal', step') = sensible (minVal, defaultVal, maxVal, step)
@@ -269,7 +272,7 @@ uiElemToJson uniformName e = addNameEntry $ case e of
       , ("min",       JVNumber lower)
       , ("value",     JVNumber defaultVal)
       , ("max",       JVNumber upper) ]
-    UISliderWithStepF title lower defaultVal step upper ->
+    UISliderWithStepF title lower defaultVal upper step ->
       [ ("sort",      JVString "float_slider_with_step")
       , ("ui-type",   JVString "float")
       , ("title",     JVString title)
