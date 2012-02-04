@@ -24,7 +24,7 @@ import Shady.CompileEffect.Json
 import Shady.Image          (Image)
 import Shady.Color          (Color, HasColor, black, clear, toColor)
 import Shady.CompileImage   (eyePos)
-import Shady.CompileSurface (wrapSurf, EyePosE, Zoom)
+import Shady.CompileSurface (wrapSurfForEffect, EyePosE, Zoom)
 import Shady.ParamSurf      (SurfD, T, xyPlane)
 import Shady.Lighting       (View, view1, basicStd)
 import Shady.CompileE       (GLSL(..))
@@ -187,7 +187,7 @@ jsonUI (WebGLEffect _ _ jsons) = prettyJA $ JsonArray jsons
 compileEffect :: forall c. (HasColor c) => String -> ShadyEffect c -> WebGLEffect
 compileEffect prefix e = WebGLEffect glsl uniforms jsons
   where
-    glsl = shaderProgram $ wrapSurf eyePosE (\() -> fullSurf)
+    glsl = shaderProgram $ wrapSurfForEffect eyePosE (\() -> fullSurf)
     (uniforms,jsons) = unzip uniformsAndJsons
     (geom, uniformsAndJsons) = runUI prefix $ shadyGeometryUI e
     fullSurf = (basicStd, shadyViewGen e, surface, image)
