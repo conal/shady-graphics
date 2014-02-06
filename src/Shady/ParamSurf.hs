@@ -8,10 +8,10 @@
 -- Module      :  Shady.ParamSurf
 -- Copyright   :  (c) Conal Elliott 2008, 2009
 -- License     :  AGPLv3
--- 
+--
 -- Maintainer  :  conal@conal.net
 -- Stability   :  experimental
--- 
+--
 -- Parametric surfaces with automatic normals
 ----------------------------------------------------------------------
 
@@ -72,7 +72,7 @@ semiCircle :: Floating s => Curve2 s
 semiCircle = circle . (/ 2)
 
 -- | Torus, given radius of sweep circle and cross section
-torus :: (Floating s, VectorSpace s, Scalar s ~ s) => s -> s -> Surf s
+torus :: (AdditiveGroup s, Eq s, Floating s, VectorSpace s, Scalar s ~ s) => s -> s -> Surf s
 -- torus sr cr = revolve (\ s -> (sr,0) ^+^ cr *^ circle s)
 torus sr cr = revolve (const (sr :+ 0) ^+^ const cr *^ circle)
 
@@ -109,7 +109,7 @@ frustum baseR topR h = profile circle rad
    rad t = lerp baseR topR (t + 1/2) :+ h*t
 
 -- | Unit cylinder.  Unit height and radii
-ucylinder :: (Floating s, VectorSpace s) => Surf s
+ucylinder :: (AdditiveGroup s, Eq s, Floating s, VectorSpace s) => Surf s
 ucylinder = profile circle (const 1)
 
 -- | XY plane as a surface
@@ -131,14 +131,14 @@ sweep = cartF (^+^)
 eggcrateH :: Floating s => HeightField s
 eggcrateH = cartF (*) cosU sinU
 
-revolveH :: (Floating s, InnerSpace s, Scalar s ~ s) => Warp1 s -> HeightField s
+revolveH :: (AdditiveGroup s, Eq s, Floating s, InnerSpace s, Scalar s ~ s) => Warp1 s -> HeightField s
 revolveH = (. magnitude)
 
-rippleH :: (Floating s, InnerSpace s, Scalar s ~ s) => HeightField s
+rippleH :: (AdditiveGroup s, Eq s, Floating s, InnerSpace s, Scalar s ~ s) => HeightField s
 rippleH = revolveH sinU
 
 -- | Simple ripply pond shape
-ripple :: Floating s => Surf s
+ripple :: (AdditiveGroup s, Eq s, Floating s) => Surf s
 ripple = -- onXY' (2 *^) $
          revolve (const (0.5 :+ 0) - fcurve sinU)
 
