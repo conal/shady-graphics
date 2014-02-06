@@ -142,8 +142,10 @@ instance Monoid Color where
   mempty  = clear
   mappend = overC
 
-instance IfB BoolE Color where
-  ifB = inC2 . ifB
+type instance BooleanOf Color = BoolE
+
+instance IfB Color where
+  ifB = ifB
 
 {--------------------------------------------------------------------
     Conversion to color
