@@ -33,7 +33,6 @@ import Control.Applicative (liftA2)
 import Control.Compose ((~>))
 
 import Data.VectorSpace
-import Data.NumInstances ()
 
 import Data.Boolean
 

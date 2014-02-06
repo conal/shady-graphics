@@ -28,13 +28,31 @@ module Shady.Lighting
   , basicStd
   ) where
 
+import Control.Applicative (liftA2)
 import Data.VectorSpace (AdditiveGroup(..),(*^), sumV,(<.>),normalized)
+
 import Data.Boolean
 
 import Shady.Language.Exp
 import Shady.Color
 
 
+{--------------------------------------------------------------------
+    Instances
+--------------------------------------------------------------------}
+noOv :: String -> String -> a
+noOv ty meth = error $ meth ++ ": No overloading for " ++ ty
+
+noFun :: String -> a
+noFun = noOv "function"
+
+instance Eq (a->b) where
+  (==) = noFun "(==)"
+  (/=) = noFun "(/=)"
+
+instance Ord b => Ord (a->b) where
+  min = liftA2 min
+  max = liftA2 max
 {--------------------------------------------------------------------
     Basic types
 --------------------------------------------------------------------}
