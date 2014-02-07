@@ -7,10 +7,10 @@
 -- Module      :  Shady.ITransform
 -- Copyright   :  (c) Conal Elliott 2009
 -- License     :  AGPLv3
--- 
+--
 -- Maintainer  :  conal@conal.net
 -- Stability   :  experimental
--- 
+--
 -- Invertible transformations
 ----------------------------------------------------------------------
 

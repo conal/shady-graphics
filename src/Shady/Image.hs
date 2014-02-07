@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeOperators, TypeFamilies, FlexibleContexts
            , TypeSynonymInstances, MultiParamTypeClasses, Rank2Types
+           , FlexibleInstances
   #-}
 {-# OPTIONS_GHC -Wall -fno-warn-orphans #-}
 ----------------------------------------------------------------------
@@ -7,10 +8,10 @@
 -- Module      :  Shady.Image
 -- Copyright   :  (c) Conal Elliott 2009
 -- License     :  GPLv3
--- 
+--
 -- Maintainer  :  conal@conal.net
 -- Stability   :  experimental
--- 
+--
 -- Images (infinite & continuous)
 ----------------------------------------------------------------------
 
@@ -81,20 +82,20 @@ samplerIm s = r4ToColor . texture s . pointToR2
 translate2X :: AdditiveGroup a => a         -> ITransform a
 scale2X     :: Fractional    s => Complex s -> ITransform (Complex s)
 uscale2X    :: Fractional    s => s         -> ITransform (Complex s)
-rotate2X    :: Floating      s => s         -> ITransform (Complex s)
+rotate2X    :: (AdditiveGroup s, Eq s, Floating s) => s -> ITransform (Complex s)
 
 translate2X = andInverse (^+^) negateV
 scale2X     = andInverse (onRI2 (*)) (onRI recip)
 rotate2X    = andInverse rotate2C     negate
 uscale2X    = scale2X . \ a -> a :+ a
 
-rotate2C :: Floating s => s -> Unop (Complex s)
+rotate2C :: (AdditiveGroup s, Eq s, Floating s) => s -> Unop (Complex s)
 rotate2C theta = (cis theta *)
 
 -- experiment
 
-translate2, scale2 :: (Floating s, ITrans (Complex s) a) => Complex s -> Unop a
-uscale2,rotate2    :: (Floating s, ITrans (Complex s) a) => s -> Unop a
+translate2, scale2 :: (AdditiveGroup s, Eq s, Floating s, ITrans (Complex s) a) => Complex s -> Unop a
+uscale2,rotate2    :: (AdditiveGroup s, Eq s, Floating s, ITrans (Complex s) a) => s -> Unop a
 
 translate2 = (*:) . translate2X
 scale2     = (*:) . scale2X
@@ -216,7 +217,7 @@ uscale2Im :: Fractional s => ImageG s s -> Unop (ImageG s a)
 uscale2Im = transformG uscale2X
 
 -- | Space-varying 'rotate2'
-rotate2Im :: Floating s => ImageG s s -> Unop (ImageG s a)
+rotate2Im :: (AdditiveGroup s, Eq s, Floating s) => ImageG s s -> Unop (ImageG s a)
 rotate2Im = transformG rotate2X
 
 
@@ -235,7 +236,7 @@ rotate2Im = transformG rotate2X
 -- *Almost* equivalent, but differs for negative s.
 
 -- | Swirl transformation
-swirl :: Floating s => s -> Unop (ImageG s a)
+swirl :: (AdditiveGroup s, Eq s, Floating s) => s -> Unop (ImageG s a)
 swirl s = rotate2Im ((2*pi*s*) . magnitude)
 
 utile' :: Frac p => Unop (p -> a)
@@ -246,7 +247,7 @@ utile' = (. frac)
 -- definition can handle nD.
 
 -- | Unit, rectangular tiling.
-utile :: (Frac p, ITrans (Complex s) p, ITrans (Complex s) a, Floating s) => 
+utile :: (AdditiveGroup s, Eq s, Frac p, ITrans (Complex s) p, ITrans (Complex s) a, Floating s) =>
          Unop (p -> a)
 utile = translate2 (negate (0.5 :+ 0.5)) utile'
 
@@ -256,7 +257,7 @@ utile = translate2 (negate (0.5 :+ 0.5)) utile'
 -- Rectangle tiling with given size.
 -- tile :: ITrans Point a => Point -> Filter a
 
-tile :: (Floating s, Frac s, ITrans (Complex s) a) =>
+tile :: (AdditiveGroup s, Eq s, Floating s, Frac s, ITrans (Complex s) a) =>
         Complex s -> Unop (ImageG s a)
 tile s = scale2 s utile
 

@@ -5,10 +5,10 @@
 -- Module      :  Shady.Lighting
 -- Copyright   :  (c) Conal Elliott 2009
 -- License     :  AGPLv3
--- 
+--
 -- Maintainer  :  conal@conal.net
 -- Stability   :  experimental
--- 
+--
 -- Lighting/shading.  Adapted from Vertigo.
 ----------------------------------------------------------------------
 
@@ -28,13 +28,31 @@ module Shady.Lighting
   , basicStd
   ) where
 
+import Control.Applicative (liftA2)
 import Data.VectorSpace (AdditiveGroup(..),(*^), sumV,(<.>),normalized)
+
 import Data.Boolean
 
 import Shady.Language.Exp
 import Shady.Color
 
 
+{--------------------------------------------------------------------
+    Instances
+--------------------------------------------------------------------}
+noOv :: String -> String -> a
+noOv ty meth = error $ meth ++ ": No overloading for " ++ ty
+
+noFun :: String -> a
+noFun = noOv "function"
+
+instance Eq (a->b) where
+  (==) = noFun "(==)"
+  (/=) = noFun "(/=)"
+
+instance Ord b => Ord (a->b) where
+  min = liftA2 min
+  max = liftA2 max
 {--------------------------------------------------------------------
     Basic types
 --------------------------------------------------------------------}
@@ -112,7 +130,7 @@ dirL = lift . liDir
 -- | Combine contributions from multiple lights.  Patterned after
 -- Renderman's @illuminance@ construct.
 illuminance :: -- (Num a, VectorSpace IfB (VecE OneT Bool) (Scalar a), Num (Scalar a)) =>
-               (AdditiveGroup a, IfB BoolE a) =>
+               (AdditiveGroup a, IfB a) =>
                LLighter a -> Lighter a
 illuminance llighter v@(View _ _ ls) s@(SurfInfo p _ _) =
   -- sumV [ (ifB (lift surfN <.> dirL >* 0) llighter zeroV) (light p) v s | light <- ls ]
@@ -148,7 +166,7 @@ ambDiff :: (Color, Color) -> Lighter Color
 ambDiff (ka,kd) = intrinsic * (lift ka * ambient + lift kd * diffuse)
 
 -- | The Stanford rtsl version, with ambient and weights:
--- 
+--
 -- surface float4
 -- lightmodel_diffuse (float4 ka, float4 kd)
 -- {
@@ -219,7 +237,7 @@ basicNH = basic (lift surfN <.> eyeLight)        -- The N.H model
 -- WORKING HERE.  Coefficients not yet right.
 
 phongN :: LLighter DirE -> Lighter Color
-phongN n = 
+phongN n =
   cs * lift ka * ambient + cs * lift kd ^* illuminance ldotN
   + lift ks ^* illuminance (vdotR ** lift sh)
 -}

@@ -8,10 +8,10 @@
 -- Module      :  Shady.Color
 -- Copyright   :  (c) Conal Elliott 2009
 -- License     :  AGPLv3
--- 
+--
 -- Maintainer  :  conal@conal.net
 -- Stability   :  experimental
--- 
+--
 -- Simple colors
 ----------------------------------------------------------------------
 
@@ -33,7 +33,6 @@ import Control.Applicative (liftA2)
 import Control.Compose ((~>))
 
 import Data.VectorSpace
-import Data.NumInstances ()
 
 import Data.Boolean
 
@@ -53,7 +52,7 @@ type Float4E = (FloatE,FloatE,FloatE,FloatE)
 -- | Color, as RGBA
 newtype Color = C { unC :: Float4E }
   deriving ( Eq,Ord,Show,Num,Fractional,Floating
-           , AdditiveGroup, InnerSpace )
+           , AdditiveGroup)
 
 -- VectorSpace has an associated type, which @deriving@ currently doesn't handle.
 instance VectorSpace Color where
@@ -142,8 +141,10 @@ instance Monoid Color where
   mempty  = clear
   mappend = overC
 
-instance IfB BoolE Color where
-  ifB = inC2 . ifB
+type instance BooleanOf Color = BoolE
+
+instance IfB Color where
+  ifB = ifB
 
 {--------------------------------------------------------------------
     Conversion to color
