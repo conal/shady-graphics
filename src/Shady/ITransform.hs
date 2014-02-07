@@ -53,11 +53,6 @@ infixr 1 *:
 class ITrans w a | a -> w where
   (*:) :: ITransform w -> Unop a
 
--- Inert on our basic types
-instance ITrans w (E a) where
-  (*:) = const id
-
-
 -- Typical identity instance:
 
 instance ITrans (Complex s) (Complex s) where (*:) = itForward
