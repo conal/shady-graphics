@@ -1,5 +1,5 @@
 Name:                shady-graphics
-Version:             0.6.0
+Version:             0.6.1
 Cabal-Version:       >= 1.6
 Synopsis:            Functional GPU programming - graphics
 Category:            Graphics

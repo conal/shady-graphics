@@ -25,7 +25,7 @@ import Control.Applicative (liftA2)
 
 import Shady.Misc
 import Shady.Complex (Complex)
--- import Shady.Language.Exp
+import Shady.Language.Exp (E)
 
 -- | Transform with inverse.  The 'Monoid' instances is identity and
 -- composition (in the usual order for composition of the forward
@@ -57,10 +57,12 @@ class ITrans w a | a -> w where
 
 instance ITrans (Complex s) (Complex s) where (*:) = itForward
 
--- Distribute over tuple types.
+-- E a is treated as trivially transformable. Revisit this choice later.
+-- TODO: How does this instance not violate the functional dependency?
+instance ITrans w (E a) where (*:) = const id
 
 
-
+-- Distribute over tuple types:
 
 instance (ITrans w a, ITrans w b) => ITrans w (a,b) where
   ix *: (a,b) = (ix *: a, ix *: b)
