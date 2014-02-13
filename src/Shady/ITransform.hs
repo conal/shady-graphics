@@ -25,7 +25,7 @@ import Control.Applicative (liftA2)
 
 import Shady.Misc
 import Shady.Complex (Complex)
-import Shady.Language.Exp
+-- import Shady.Language.Exp
 
 -- | Transform with inverse.  The 'Monoid' instances is identity and
 -- composition (in the usual order for composition of the forward

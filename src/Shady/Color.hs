@@ -70,8 +70,8 @@ r4ToColor = C . un4
 inC :: Unop (Float4E) -> Unop Color
 inC = unC ~> C
 
-inC2 :: Binop (Float4E) -> Binop Color
-inC2 = unC ~> inC
+-- inC2 :: Binop (Float4E) -> Binop Color
+-- inC2 = unC ~> inC
 
 -- | Color from red, green, blue, alpha components
 rgba :: R1 :=> R1 :=> R1 :=> R1 :=> Color
