@@ -150,7 +150,18 @@ instance IfB Color where
     Conversion to color
 --------------------------------------------------------------------}
 
-class HasColor a where toColor :: a -> Color
+--
+-- sseefried:
+--
+-- Class 'HasColor a' has a Monoid constraint. 'mempty' should be
+-- a value that when converted to a color produces 'clear'.
+-- 'mappend' should compose two images.
+--
+class Monoid a => HasColor a where toColor :: a -> Color
+
+instance Monoid BoolE where
+  mempty  = false
+  mappend = (||*)
 
 instance HasColor Color where toColor = id
 instance HasColor BoolE where toColor = boolean nonWhite white

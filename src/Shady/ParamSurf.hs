@@ -165,6 +165,9 @@ rotate theta = \ (x :+ y) -> (x * c - y * s) :+  (y * c + x * s)
  where c = cos theta
        s = sin theta
 
+translate :: Floating s => s -> Warp1 s
+translate d = \x -> x + d
+
 addX, addY, addZ :: Num s => (a -> Complex s) -> (a -> (s,s,s))
 addX = fmap (\ (y :+ z) -> (0,y,z))
 addY = fmap (\ (x :+ z) -> (x,0,z))
@@ -195,6 +198,13 @@ onXY',onXZ',onYZ' :: Warp2 s -> (a -> (s,s,s)) -> (a -> (s,s,s))
 onXY' = fmap . onXY
 onXZ' = fmap . onXZ
 onYZ' = fmap . onYZ
+
+--
+-- | Rotate using a rotation matrix
+--
+rotateByMatrix :: Num s => ((s,s,s), (s,s,s), (s,s,s)) -> Warp3 s
+rotateByMatrix ((a0,a1,a2), (b0,b1,b2), (c0,c1,c2)) (x,y,z) =
+  (a0*x+a1*y+a2*z, b0*x+b1*y+b2*z, c0*x+c1*y+c2*z)
 
 
 {--------------------------------------------------------------------
