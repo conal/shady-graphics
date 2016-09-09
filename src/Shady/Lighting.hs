@@ -32,8 +32,6 @@ module Shady.Lighting
 import Control.Applicative (liftA2)
 import Data.VectorSpace (AdditiveGroup(..),(*^), sumV,(<.>),normalized)
 
-import Data.Boolean
-
 import Shady.Language.Exp
 import Shady.Color
 
@@ -136,7 +134,7 @@ dirL = lift . liDir
 -- | Combine contributions from multiple lights.  Patterned after
 -- Renderman's @illuminance@ construct.
 illuminance :: -- (Num a, VectorSpace IfB (VecE OneT Bool) (Scalar a), Num (Scalar a)) =>
-               (AdditiveGroup a, IfB a) =>
+               AdditiveGroup a =>
                LLighter a -> Lighter a
 illuminance llighter v@(View _ _ ls) s@(SurfInfo p _ _) =
   -- sumV [ (ifB (lift surfN <.> dirL >* 0) llighter zeroV) (light p) v s | light <- ls ]

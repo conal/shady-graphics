@@ -72,7 +72,7 @@ semiCircle :: Floating s => Curve2 s
 semiCircle = circle . (/ 2)
 
 -- | Torus, given radius of sweep circle and cross section
-torus :: (AdditiveGroup s, Eq s, Floating s, VectorSpace s, Scalar s ~ s) => s -> s -> Surf s
+torus :: (Eq s, Floating s, VectorSpace s) => s -> s -> Surf s
 -- torus sr cr = revolve (\ s -> (sr,0) ^+^ cr *^ circle s)
 torus sr cr = revolve (const (sr :+ 0) ^+^ const cr *^ circle)
 
@@ -109,7 +109,7 @@ frustum baseR topR h = profile circle rad
    rad t = lerp baseR topR (t + 1/2) :+ h*t
 
 -- | Unit cylinder.  Unit height and radii
-ucylinder :: (AdditiveGroup s, Eq s, Floating s, VectorSpace s) => Surf s
+ucylinder :: (Eq s, Floating s, VectorSpace s) => Surf s
 ucylinder = profile circle (const 1)
 
 -- | XY plane as a surface
@@ -131,10 +131,10 @@ sweep = cartF (^+^)
 eggcrateH :: Floating s => HeightField s
 eggcrateH = cartF (*) cosU sinU
 
-revolveH :: (AdditiveGroup s, Eq s, Floating s, InnerSpace s, Scalar s ~ s) => Warp1 s -> HeightField s
+revolveH :: (Eq s, Floating s, InnerSpace s) => Warp1 s -> HeightField s
 revolveH = (. magnitude)
 
-rippleH :: (AdditiveGroup s, Eq s, Floating s, InnerSpace s, Scalar s ~ s) => HeightField s
+rippleH :: (Eq s, Floating s, InnerSpace s) => HeightField s
 rippleH = revolveH sinU
 
 -- | Simple ripply pond shape
