@@ -1,5 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts #-}
 {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 ----------------------------------------------------------------------
 -- |
 -- Module      :  Shady.Lighting
@@ -46,13 +47,18 @@ noOv ty meth = error $ meth ++ ": No overloading for " ++ ty
 noFun :: String -> a
 noFun = noOv "function"
 
+-- Orphan instances. Sorry!
+-- I'm using max in specularG. Look for alternatives.
+
 instance Eq (a->b) where
   (==) = noFun "(==)"
   (/=) = noFun "(/=)"
 
 instance Ord b => Ord (a->b) where
-  min = liftA2 min
-  max = liftA2 max
+  (<=) = noFun "(<=)"
+  min  = liftA2 min
+  max  = liftA2 max
+
 {--------------------------------------------------------------------
     Basic types
 --------------------------------------------------------------------}

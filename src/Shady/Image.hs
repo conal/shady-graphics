@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeOperators, TypeFamilies, FlexibleContexts
            , TypeSynonymInstances, MultiParamTypeClasses, Rank2Types
-           , FlexibleInstances
-  #-}
+           , FlexibleInstances, ScopedTypeVariables
+           , ConstraintKinds  #-}
 {-# OPTIONS_GHC -Wall -fno-warn-orphans #-}
 ----------------------------------------------------------------------
 -- |
@@ -94,8 +94,14 @@ rotate2C theta = (cis theta *)
 
 -- experiment
 
-translate2, scale2 :: (AdditiveGroup s, Eq s, Floating s, ITrans (Complex s) a) => Complex s -> Unop a
-uscale2,rotate2    :: (AdditiveGroup s, Eq s, Floating s, ITrans (Complex s) a) => s -> Unop a
+-- translate2, scale2 :: (AdditiveGroup s, Eq s, Floating s, ITrans (Complex s) a) => Complex s -> Unop a
+-- uscale2,rotate2    :: (AdditiveGroup s, Eq s, Floating s, ITrans (Complex s) a) => s -> Unop a
+
+-- type TransScalar s = (AdditiveGroup s, Eq s, Floating s)
+type TransScalar s = (s ~ E R1)
+
+translate2, scale2 :: (TransScalar s, ITrans (Complex s) a) => Complex s -> Unop a
+uscale2,rotate2    :: (TransScalar s, ITrans (Complex s) a) => s -> Unop a
 
 translate2 = (*:) . translate2X
 scale2     = (*:) . scale2X
@@ -247,9 +253,19 @@ utile' = (. frac)
 -- definition can handle nD.
 
 -- | Unit, rectangular tiling.
-utile :: (AdditiveGroup s, Eq s, Frac p, ITrans (Complex s) p, ITrans (Complex s) a, Floating s) =>
-         Unop (p -> a)
-utile = translate2 (negate (0.5 :+ 0.5)) utile'
+-- utile :: (AdditiveGroup s, Eq s, Frac p, ITrans (Complex s) p, ITrans (Complex s) a, Floating s) =>
+--          Unop (p -> a)
+-- utile :: Unop (Image a)
+-- utile = translate2 (negate (0.5 :+ 0.5)) utile'
+
+-- -- utile :: Unop (Image a)
+-- utile :: forall p a s. (Fractional s, Frac p, ITrans (Complex s) a) =>
+--          Unop (p -> a)
+-- utile = translate2 (negate (0.5 :+ 0.5 :: Complex s)) utile'
+
+utile :: (Frac p, AdditiveGroup p, Floating p, Eq p) =>
+         Unop (Complex p -> a)
+utile f = utile' (f . subtract (0.5 :+ 0.5))
 
 -- TODO: Generalize uniform scaling to arbitrary vector spaces, scaling
 -- via scalar field.
@@ -257,11 +273,22 @@ utile = translate2 (negate (0.5 :+ 0.5)) utile'
 -- Rectangle tiling with given size.
 -- tile :: ITrans Point a => Point -> Filter a
 
-tile :: (AdditiveGroup s, Eq s, Floating s, Frac s, ITrans (Complex s) a) =>
-        Complex s -> Unop (ImageG s a)
+-- tile :: (AdditiveGroup s, Eq s, Floating s, Frac s, ITrans (Complex s) a) =>
+--         Complex s -> Unop (ImageG s a)
+-- tile :: ( AdditiveGroup s, Floating s, Eq s
+--         , ITrans (Complex s) Point, ITrans (Complex s) a) =>
+--         Complex s -> Unop (Image a)
+
+tile :: ( TransScalar s
+        , AdditiveGroup p, Floating p, Eq p
+        , ITrans (Complex s) (Complex p), ITrans (Complex s) a, Frac p
+        ) =>
+        Complex s -> Unop (Complex p -> a)
 tile s = scale2 s utile
 
 -- tile = flip scale2 utile
+
+-- instance ITrans (Complex s) (Complex s) where (*:) = itForward
 
 
 {--------------------------------------------------------------------

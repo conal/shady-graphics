@@ -50,7 +50,7 @@ andInverse f inva = liftA2 ITransform f (f.inva)
 infixr 1 *:
 
 -- | Transformable values
-class ITrans w a | a -> w where
+class ITrans w a {- | a -> w -} where
   (*:) :: ITransform w -> Unop a
 
 -- Typical identity instance:

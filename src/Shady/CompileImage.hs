@@ -47,3 +47,4 @@ imSurfB imb t = (intrinsic, view1, xyPlane , toColor . imb (powVal t))
 -- | GLSL program for an 'ImageB'.
 imageBProg :: HasColor c => ImageB c -> GLSL R1 R2
 imageBProg = surfBProg eyePosE . imSurfB
+

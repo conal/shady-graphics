@@ -143,8 +143,10 @@ instance Monoid Color where
 
 type instance BooleanOf Color = BoolE
 
-instance IfB Color where
-  ifB = ifB
+instance IfE Color where
+  ifE i t e = r4ToColor (ifE i (colorToR4 t) (colorToR4 e))
+
+instance IfB Color where ifB = ifE
 
 {--------------------------------------------------------------------
     Conversion to color
