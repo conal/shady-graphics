@@ -23,6 +23,7 @@ module Shady.Examples where
 import Prelude hiding ((<*))
 
 import Control.Applicative ((<$>),(<*>), liftA2)
+import System.Directory (createDirectoryIfMissing)
 
 import Control.Compose (result)
 
@@ -50,8 +51,9 @@ x :: HasColor c => Sink (ImageB c)
 x = print . imageBProg
 
 saveShader :: String -> String -> String -> IO ()
-saveShader suffix name =
-  writeFile ("sample-shaders/" ++ name ++ "." ++ suffix)
+saveShader suffix name content =
+  do createDirectoryIfMissing False "sample-shaders"
+     writeFile ("sample-shaders/" ++ name ++ "." ++ suffix) content
 
 saveVert, saveFrag, saveSh :: String -> Sink (GLSL R1 R2)
 

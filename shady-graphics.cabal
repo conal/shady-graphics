@@ -24,11 +24,21 @@ Source-Repository head
 Library
   hs-Source-Dirs:      src
 
-  Build-Depends:       base >=4 && < 5, containers, mtl, wl-pprint
-                     , applicative-numbers>=0.0.4, vector-space>=0.5.6
-                     , TypeCompose >= 0.7, MemoTrie, ty, data-treify
-                     , Boolean, NumInstances >= 1.4, type-unary
+  Build-Depends:       Boolean
+                     , MemoTrie
+                     , NumInstances >= 1.4
+                     , TypeCompose >= 0.7
+                     , applicative-numbers>=0.0.4
+                     , base >=4 && < 5
+                     , containers
+                     , data-treify
+                     , directory >= 1.2.6.2
+                     , mtl
                      , shady-gen
+                     , ty
+                     , type-unary
+                     , vector-space>=0.5.6
+                     , wl-pprint
   Exposed-Modules:
                         Shady.ITransform
                         Shady.Color
